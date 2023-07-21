@@ -8,8 +8,10 @@ init offset = -2
 
 ## Calling gui.init resets the styles to sensible default values, and sets the
 ## width and height of the game.
+define game_width = 1066
+define game_height = 600
 init python:
-    gui.init(1280, 720)
+    gui.init(game_width, game_height)
 
 ## Enable checks for invalid or unstable properties in screens or transforms
 define config.check_conflicting_properties = True
@@ -26,6 +28,7 @@ define config.check_conflicting_properties = True
 
 ## An accent color used throughout the interface to label and highlight text.
 define gui.accent_color = '#99ccff'
+# TODO: change to '#ffffff'
 
 ## The color used for a text button when it is neither selected nor hovered.
 define gui.idle_color = '#888888'
@@ -57,19 +60,19 @@ define gui.interface_text_color = '#ffffff'
 ## Fonts and Font Sizes ########################################################
 
 ## The font used for in-game text.
-define gui.text_font = "DejaVuSans.ttf"
+define gui.text_font = "SourceSerifPro-Regular.ttf"
 
 ## The font used for character names.
-define gui.name_text_font = "DejaVuSans.ttf"
+define gui.name_text_font = "CrimsonText-Bold.ttf"
 
 ## The font used for out-of-game text.
-define gui.interface_text_font = "DejaVuSans.ttf"
+define gui.interface_text_font = "CrimsonText-SemiBold.ttf"
 
 ## The size of normal dialogue text.
-define gui.text_size = 22
+define gui.text_size = 20
 
 ## The size of character names.
-define gui.name_text_size = 30
+define gui.name_text_size = 26
 
 ## The size of text in the game's user interface.
 define gui.interface_text_size = 22
@@ -111,12 +114,12 @@ define gui.name_ypos = 0
 
 ## The horizontal alignment of the character's name. This can be 0.0 for left-
 ## aligned, 0.5 for centered, and 1.0 for right-aligned.
-define gui.name_xalign = 0.0
+define gui.name_xalign = 0.5
 
 ## The width, height, and borders of the box containing the character's name, or
 ## None to automatically size it.
 define gui.namebox_width = None
-define gui.namebox_height = None
+define gui.namebox_height = 64 # Width may vary with char. name length but height shouldn't
 
 ## The borders of the box containing the character's name, in left, top, right,
 ## bottom order.
@@ -130,11 +133,11 @@ define gui.namebox_tile = False
 ## The placement of dialogue relative to the textbox. These can be a whole
 ## number of pixels relative to the left or top side of the textbox, or 0.5 to
 ## center.
-define gui.dialogue_xpos = 268
+define gui.dialogue_xpos = game_width // 5 # 1066 // 5 = 213
 define gui.dialogue_ypos = 50
 
 ## The maximum width of dialogue text, in pixels.
-define gui.dialogue_width = 744
+define gui.dialogue_width = game_width // 5 * 3 # 1066 * 0.6 ~= 640
 
 ## The horizontal alignment of the dialogue text. This can be 0.0 for left-
 ## aligned, 0.5 for centered, and 1.0 for right-aligned.
@@ -189,6 +192,7 @@ define gui.confirm_button_text_xalign = 0.5
 define gui.page_button_borders = Borders(10, 4, 10, 4)
 
 define gui.quick_button_borders = Borders(10, 4, 10, 0)
+define gui.quick_button_text_font = "SourceSerifPro-Regular.ttf"
 define gui.quick_button_text_size = 14
 define gui.quick_button_text_idle_color = gui.idle_small_color
 define gui.quick_button_text_selected_color = gui.accent_color
@@ -223,8 +227,8 @@ define gui.choice_button_text_insensitive_color = '#8888887f'
 ## image files in gui/button, like the other kinds of buttons.
 
 ## The save slot button.
-define gui.slot_button_width = 276
-define gui.slot_button_height = 206
+define gui.slot_button_width = 230
+define gui.slot_button_height = 160
 define gui.slot_button_borders = Borders(10, 10, 10, 10)
 define gui.slot_button_text_size = 14
 define gui.slot_button_text_xalign = 0.5
@@ -233,8 +237,8 @@ define gui.slot_button_text_selected_idle_color = gui.selected_color
 define gui.slot_button_text_selected_hover_color = gui.hover_color
 
 ## The width and height of thumbnails used by the save slots.
-define config.thumbnail_width = 256
-define config.thumbnail_height = 144
+define config.thumbnail_width = 212
+define config.thumbnail_height = 108
 
 ## The number of columns and rows in the grid of save slots.
 define gui.file_slot_cols = 3
@@ -341,7 +345,7 @@ define config.history_length = 250
 
 ## The height of a history screen entry, or None to make the height variable at
 ## the cost of performance.
-define gui.history_height = 140
+define gui.history_height = 100 # change me
 
 ## The position, width, and alignment of the label giving the name of the
 ## speaking character.
@@ -351,9 +355,9 @@ define gui.history_name_width = 155
 define gui.history_name_xalign = 1.0
 
 ## The position, width, and alignment of the dialogue text.
-define gui.history_text_xpos = 170
-define gui.history_text_ypos = 2
-define gui.history_text_width = 740
+define gui.history_text_xpos = gui.history_name_xpos + 30
+define gui.history_text_ypos = 0
+define gui.history_text_width = game_width // 2
 define gui.history_text_xalign = 0.0
 
 
@@ -362,7 +366,7 @@ define gui.history_text_xalign = 0.0
 ## The NVL-mode screen displays the dialogue spoken by NVL-mode characters.
 
 ## The borders of the background of the NVL-mode background window.
-define gui.nvl_borders = Borders(0, 10, 0, 20)
+define gui.nvl_borders = Borders(0, 50, 0, 20) # NOTE: added padding to top
 
 ## The maximum number of NVL-mode entries Ren'Py will display. When more entries
 ## than this are to be show, the oldest entry will be removed.
@@ -370,7 +374,7 @@ define gui.nvl_list_length = 6
 
 ## The height of an NVL-mode entry. Set this to None to have the entries
 ## dynamically adjust height.
-define gui.nvl_height = 115
+define gui.nvl_height = None
 
 ## The spacing between NVL-mode entries when gui.nvl_height is None, and between
 ## NVL-mode entries and an NVL-mode menu.
@@ -378,16 +382,16 @@ define gui.nvl_spacing = 10
 
 ## The position, width, and alignment of the label giving the name of the
 ## speaking character.
-define gui.nvl_name_xpos = 430
+define gui.nvl_name_xpos = 0 # N/A
 define gui.nvl_name_ypos = 0
-define gui.nvl_name_width = 150
+define gui.nvl_name_width = 0 # N/A 
 define gui.nvl_name_xalign = 1.0
 
 ## The position, width, and alignment of the dialogue text.
-define gui.nvl_text_xpos = 450
-define gui.nvl_text_ypos = 8
-define gui.nvl_text_width = 590
-define gui.nvl_text_xalign = 0.0
+define gui.nvl_text_xpos = game_width // 2
+define gui.nvl_text_ypos = 30
+define gui.nvl_text_width = game_width * 2 // 3
+define gui.nvl_text_xalign = 0.5
 
 ## The position, width, and alignment of nvl_thought text (the text said by the
 ## nvl_narrator character.)

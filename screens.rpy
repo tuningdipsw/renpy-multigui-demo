@@ -4,6 +4,33 @@
 
 init offset = -1
 
+init python:
+    def get_polarity_suffix():
+        suffix_dict = {
+            "sun": "_s",
+            "moon": "_l"
+        }
+        if polarity and polarity in suffix_dict:
+            return suffix_dict[polarity]
+        else:
+            return "" # no suffix, use default GUI assets as fallback
+
+    # a: optional alpha value in hex, defaults to slightly transparent
+    def get_text_color(a="e0"):
+        color_dict = {
+            "sun": "#000000",
+            "moon": "#ffffff"
+        }
+        if polarity and polarity in color_dict:
+            return color_dict[polarity] + a
+        else:
+            return gui.text_color
+
+    def pad_name(name):
+        output = name * 2
+        if len(output) < 30:
+            output += " " * 30
+        return output
 
 ################################################################################
 ## Styles
@@ -99,16 +126,26 @@ screen say(who, what):
     style_prefix "say"
 
     window:
-        id "window"
+        id "window" + (get_polarity_suffix())
+        style "window" + (get_polarity_suffix())
 
         if who is not None:
 
             window:
-                id "namebox"
-                style "namebox"
-                text who id "who"
+                id "namebox_bg" + (get_polarity_suffix())
+                style "namebox_bg" + (get_polarity_suffix())
+                text pad_name(who) id "who" color "#00000000"
+                # transparent copy of who text, padded
+                # - added to this bg window so that gui.namebox_width=None gives size correctly
+                # - You probably won't need to have this dupe/separate namebox_bg depending on your namebox.png looks.
+            window:
+                id "namebox" + (get_polarity_suffix())
+                style "namebox" + (get_polarity_suffix())
+                text who id "who" color (get_text_color())
 
-        text what id "what"
+        text what id "what" color (get_text_color())
+        # For some reason, attaching `style "STYLE_X"` to this element didn't work. I'm not sure why.
+        # I only wanted to style the color, so I've settled for this instead.
 
 
     ## If there's a side image, display it above the text. Do not display on the
@@ -138,20 +175,80 @@ style window:
 
     background Image("gui/textbox.png", xalign=0.5, yalign=1.0)
 
+# NOTE: Reusing the same Ren'Py style vs. defining children styles
+
+# Instead of defining window_s and window_l, it is also possible to achieve a similar effect
+# by writing:
+#   background(
+#       Image("gui/textbox_s.png", xalign=0.5, yalign=1.0) if polarity == sun
+#       else Image("gui/textbox_l.png", xalign=0.5, yalign=1.0)
+#   )
+# under `style window` above, which is a little shorter.
+
+# ISSUES
+# 1. However, the window style won't be updated along with the variable `polarity`.
+# >>>>> You have to call `gui.rebuild()` after updating `polarity` for the style to actually change.
+# `gui.rebuild()` doesn't run quickly, so it introduces a slight latency after GUI switches.
+# This might be acceptable UX if GUI switches are rare.
+
+# 2. Usability risk - It becomes possible to forget to include the `gui.rebuild()` statement when writing `script.rpy`.
+
+# 3. Python's ternary operator (the if-else statement above) would only work for 2 GUI options (can't elif for a 3rd).
+# You could get around this by writing a python function to return the desired field and putting it in init python.
+# At that point, though, it might be easier just to write out the children styles.
+
+# 4. I haven't tested how this method interacts with save/load/rollbacks.
+
+style window_s is window:
+    background Image("gui/textbox_s.png", xalign=0.5, yalign=0.5)
+
+style window_l is window:
+    background Image("gui/textbox_l.png", xalign=0.5, yalign=0.5)
+
 style namebox:
     xpos gui.name_xpos
     xanchor gui.name_xalign
     xsize gui.namebox_width
     ypos gui.name_ypos
     ysize gui.namebox_height
+    yoffset gui.namebox_height // -3
 
     background Frame("gui/namebox.png", gui.namebox_borders, tile=gui.namebox_tile, xalign=gui.name_xalign)
     padding gui.namebox_borders.padding
+
+# Note: Separated the nametag splash window from the nametag text window.
+# Getting these positioned the way I wanted was an extremely finicky process, so I'm not making them children of namebox.
+style namebox_bg_s is default:
+    xsize gui.namebox_width
+    xanchor 0.5
+    xalign 0.8
+
+    ysize gui.namebox_height
+    yoffset gui.namebox_height // -3
+    background Frame("gui/nametag_bg_s.png")
+
+style namebox_bg_l is default:
+    xsize gui.namebox_width
+    xanchor 0.5
+    xalign 0.2
+
+    ysize gui.namebox_height * 4 // 5
+    yoffset gui.namebox_height // -4
+    background Frame("gui/nametag_bg_l.png")
+
+style namebox_s is namebox:
+    xalign 0.8
+    xanchor 0.5
+
+style namebox_l is namebox:
+    xalign 0.2
+    xanchor 0.5
 
 style say_label:
     properties gui.text_properties("name", accent=True)
     xalign gui.name_xalign
     yalign 0.5
+    kerning 2.0
 
 style say_dialogue:
     properties gui.text_properties("dialogue")
@@ -210,7 +307,11 @@ screen choice(items):
 
     vbox:
         for i in items:
-            textbutton i.caption action i.action
+            textbutton i.caption:
+                id "choice_button" + get_polarity_suffix()
+                style "choice_button" + get_polarity_suffix()
+                action i.action
+                text_style "choice_button_text" + get_polarity_suffix()
 
 
 style choice_vbox is vbox
@@ -227,9 +328,23 @@ style choice_vbox:
 style choice_button is default:
     properties gui.button_properties("choice_button")
 
+style choice_button_s is choice_button:
+    idle_background Frame("gui/button/choice_idle_background_s.png")
+    hover_background Frame("gui/button/choice_hover_background_s.png")
+
+style choice_button_l is choice_button:
+    idle_background Frame("gui/button/choice_idle_background_l.png")
+    hover_background Frame("gui/button/choice_hover_background_l.png")
+
 style choice_button_text is default:
     properties gui.button_text_properties("choice_button")
+    xcenter 0.5
 
+style choice_button_text_s is choice_button_text:
+    color "#000000"
+
+style choice_button_text_l is choice_button_text:
+    color "#ffffff"
 
 ## Quick Menu screen ###########################################################
 ##
@@ -245,19 +360,31 @@ screen quick_menu():
 
         hbox:
             style_prefix "quick"
+            style "quick_bar" + get_polarity_suffix()
+            id "quick_bar" + get_polarity_suffix()
 
-            xalign 0.5
-            yalign 1.0
+            # it would be less repetition to add text_idle_color to a style, but using a style would require rebuild() calls
+            textbutton _("back") action Rollback() text_idle_color get_text_color("80")
+            textbutton _("history") action ShowMenu('history') text_idle_color get_text_color("80")
+            textbutton _("skip") action Skip() alternate Skip(fast=True, confirm=True) text_idle_color get_text_color("80")
+            textbutton _("auto") action Preference("auto-forward", "toggle") text_idle_color get_text_color("80") text_selected_idle_color gui.hover_color
+            # TODO: substitute in accent color of choice
+            textbutton _("save") action ShowMenu('save') text_idle_color get_text_color("80")
+            textbutton _("q.save") action QuickSave() text_idle_color get_text_color("80")
+            textbutton _("q.load") action QuickLoad() text_idle_color get_text_color("80")
+            textbutton _("prefs") action ShowMenu('preferences') text_idle_color get_text_color("80")
 
-            textbutton _("Back") action Rollback()
-            textbutton _("History") action ShowMenu('history')
-            textbutton _("Skip") action Skip() alternate Skip(fast=True, confirm=True)
-            textbutton _("Auto") action Preference("auto-forward", "toggle")
-            textbutton _("Save") action ShowMenu('save')
-            textbutton _("Q.Save") action QuickSave()
-            textbutton _("Q.Load") action QuickLoad()
-            textbutton _("Prefs") action ShowMenu('preferences')
+style quick_bar is default:
+    xalign 0.5
+    yalign 1.0
 
+style quick_bar_s is quick_bar:
+    yoffset -30
+    xalign 0.2
+
+style quick_bar_l is quick_bar:
+    yoffset -30
+    xalign 0.95
 
 ## This code ensures that the quick_menu screen is displayed in-game, whenever
 ## the player has not explicitly hidden the interface.
@@ -495,12 +622,12 @@ style return_button_text is navigation_button_text
 
 style game_menu_outer_frame:
     bottom_padding 30
-    top_padding 120
+    top_padding 90
 
     background "gui/overlay/game_menu.png"
 
 style game_menu_navigation_frame:
-    xsize 280
+    xsize 235
     yfill True
 
 style game_menu_content_frame:
